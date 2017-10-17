@@ -1,5 +1,5 @@
 #lang racket
-
+;;-*- mode: scheme -*-
 (require racket/gui/base)
 
 ;; ゲームの縦横
@@ -14,6 +14,12 @@
       ((zero? n) (first obj))
       (else (nth (rest obj) (- n 1))))))
 
+;; (map-index '(a b c d)) は ((0 a) (1 b) (2 c) (3 d)) を返す。
+(define map-index
+  (λ (lst)
+    (map list (range (length lst)) lst)))
+
+;; ゲームはここから。
 (define frame (new frame% [label "tic-tac-toe"]))
 (send frame show #t)
 
@@ -40,6 +46,31 @@
           (send btn set-label mark)
           #t))))
 
+;; リスト buttons 中のマーク m がついたボタンのインデックスを返す。
+;; FIXME, 毎回 map-index を呼ぶのは非効率だろ？
+(define select-index
+  (λ (m)
+    (map car
+         (filter (λ (ib) (equal? m (send (second ib) get-label)))
+                 (map-index buttons)))))
+
+;; FIXME, インデックスから縦横斜めに揃っているかどうかを判定。
+;; 揃っていたら #t, そうでなければ #f を返す。宮崎に任すと喜ぶか？
+;; インチキして、長さで判定。
+(define wins?
+  (lambda (marks)
+    (> (length marks) 3)))
+
+;; 勝敗判定
+(define judge
+  (lambda ()
+    (let ((os (select-index "o"))
+          (xs (select-index "x")))
+      (cond
+       ((wins? os) (message "o wins"))
+       ((wins? xs) (message "x wins"))
+       (else #f)))))
+
 
 ;; 相手に手を渡す。
 ;; 空いている目を調べ、ランダムにその一つにマーク "x" を入れる。
@@ -49,7 +80,8 @@
     (let ((empties
            (filter (λ (b) (equal? (send b get-label) "")) buttons)))
       ;; FIXME, version 1. 空いている最初のマスを選択する。
-      (mark (first empties) "x"))))
+      (mark (first empties) "x")
+      (judge))))
 
 ;; 盤面の作成。
 ;; 同時にボタンのコールバック関数を定義。
@@ -65,4 +97,5 @@
                                       [label ""]
                                       [callback (λ (b e)
                                                   (when (mark b "o")
+                                                    (judge)
                                                     (opposite)))]))))))
