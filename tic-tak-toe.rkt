@@ -28,7 +28,10 @@
   (λ (lst)
     (map list (range (length lst)) lst)))
 
-;; ゲームはここから。
+
+;; 打ったマスを覚えておくのに current を導入。
+(define current #f)
+
 (define frame (new frame% [label "tic-tac-toe"]))
 (send frame show #t)
 
@@ -89,10 +92,12 @@
 ;; ルールは知っているが、戦略は持たないバカな相手。
 (define opposite
   (λ ()
-    (let ((empties
-           (filter (λ (b) (equal? (send b get-label) "")) buttons)))
-      ;; FIXME, version 1. 空いている最初のマスを選択する。
-      (mark (first empties) "x")
+    (let* ((empties)
+           (filter (λ (b) (equal? (send b get-label) "")) buttons)
+           (my (first empties)))
+      ;; FIXME, 空いている最初のマスを選択する。
+      (mark my "x")
+      (set! current my)
       (judge))))
 
 ;; 盤面の作成。
@@ -111,6 +116,7 @@
                               [label ""]
                               [callback (λ (b e)
                                           (when (mark b "o")
+                                            (set! current (+ (* row rows) col))
                                             (judge)
                                             (opposite)))]))))))
 
