@@ -3,8 +3,8 @@
 ;;
 ;; コメント熟読せよ。
 ;;
-;; * GUI からプログラムしてみる
-;; * 判定ルーチンを独立させる
+;; * GUI からプログラムしてみる。
+;; * 判定ルーチンを独立させる。
 ;;
 
 (require racket/gui/base)
@@ -66,8 +66,7 @@
     (filter (λ (ib) (equal? m (send (second ib) get-label)))
             buttons-index)))
 
-;; インデックスから縦横斜めに揃っているかどうかを判定。
-;; 揃っていたら #t, そうでなければ #f を返す。
+;; アトム a はリスト xs の要素か？
 (define exists?
   (λ (a xs)
     (cond
@@ -75,12 +74,11 @@
      ((= (car xs) a) #t)
      (else (exists? a (cdr xs))))))
 
-;; FIXME, 一般化できたと思うが、長すぎ。
-;; 打った石の横縦斜めに自分の石があるかどうかを判定する。
+;; FIXME, 打った石の横縦斜めに自分の石があるかどうかを判定する。
+;; 一般化できたと思うが、長すぎ。
 ;; もっとコンサイスに書けないの？
 (define horizontal?
   (λ (c marks)
-;;    (printf "~a ~a~%" c marks)
     (or
      (and (exists? (+ c 1) marks) (exists? (+ c 2) marks))
      (and (exists? (+ c 1) marks) (exists? (- c 1) marks))
@@ -109,7 +107,7 @@
      (and (exists? (- c (- cols 1)) marks)
           (exists? (- c (* 2 (- cols 1))) marks)))))
 
-(define wins?
+(define win?
   (λ (objs)
     (let ((marks (map car objs)))
       (or
@@ -119,13 +117,14 @@
 
 ;; 勝敗判定
 ;; select-marked で味方の石のある場所のリスト、
-;; wins? で石が並んでるかどうかを判定、メッセージをだす。
+;; win? で石が並んでるかどうかを判定、メッセージをだす。
 ;; 勝敗がつかない時は #f で抜ける。
 ;;
-;; FIXME, 勝敗ついた時はゲームを止めなくちゃな。exit はあんまりか？
+;; FIXME, 勝敗ついた時はゲームを止めなくちゃな。
+;; exit はあんまりだ。
 (define judge
   (λ (mark)
-    (if (wins? (select-marked mark))
+    (if (win? (select-marked mark))
         (begin
           (message (string-append mark " wins"))
           (exit))
@@ -133,24 +132,26 @@
 
 ;; 相手に手を渡す。
 ;; 空いている目を調べ、ランダムにその一つにマーク "x" を入れる。
-;; ルールは知っているが、戦略は持たないバカな相手。
+;; ルールは知っているが、戦略は持たない人工無脳。
 ;; 打った手を current に記録する。
 (define opposite
   (λ ()
     (let* ((empties (select-marked ""))
-           (my (first empties)))
-      ;; FIXME, 空いている最初のマスを選択する。
+           (my (nth empties (random (length empties)))))
       (mark (second my) "x")
       (set! current (first my))
       (judge "x"))))
 
 ;; 盤面の作成。
 ;; 同時にボタンのコールバック関数を定義。
-;; この関数はボタンがすでに押されていたらエラーメッセージを出し、
+;; この関数はそのマスにすでに石が入っていたらエラー、
 ;; そうでなければ "o" を表示し、相手に手を渡す関数を呼ぶ。
-;; 2重ループが list の list を返すので、
+;; 二重ループが list の list を返すので、
 ;; map 関数が楽になるよう flatten で平たくしておく。
 ;; panel の代わりに軽い pane を使う。あんまり変わらん。
+;; クリックされたボタンの場所を current にセーブする。
+;; 場所は一次元リスト中のオフセット。
+;; クリックされた場所を起点に縦横斜めの石の配置を調べるため。
 (define buttons
   (flatten
    (for/list ([row (range rows)])
@@ -165,5 +166,6 @@
                                             (opposite)))]))))))
 
 ;; ボタンのリストにインデックスをつけたリストをあらかじめ作っておく。
-;; (b0 b1 b2) => ((0 b0) (1 b1) (2 b2)) みたいに。
+;; buttons がリスト (ba bb bc) であれば
+;; buttonx-index は ((0 ba) (1 bb) (2 bc)) となる。
 (define buttons-index (map-index buttons))
