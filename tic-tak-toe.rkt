@@ -82,19 +82,24 @@
     (printf "~a ~a~%" c marks)
     (or
      (and (exists? (+ c 1) marks) (exists? (+ c 2) marks))
+     (and (exists? (+ c 1) marks) (exists? (- c 1) marks))
      (and (exists? (- c 1) marks) (exists? (- c 2) marks)))))
 
-;;
 (define vertical?
   (lambda (c marks)
-    ;; (or
-    ;;  (and (exists? (+ c cols) marks) (exists? (+ c (* 2 cols)) marks))
-    ;;  (and (exists? (- c cols) marks) (exists? (- c (* 2 cols)) marks)))))
-    #f))
+    (or
+      (and (exists? (+ c cols) marks) (exists? (+ c (* 2 cols)) marks))
+      (and (exists? (+ c cols) marks) (exists? (- c cols) marks))
+      (and (exists? (- c cols) marks) (exists? (- c (* 2 cols)) marks)))))
+    
 ;
 (define diagonal?
   (lambda (c marks)
-    #f))
+    (or
+     (and (exists? (+ c (+ cols 1)) marks) (exists? (+ c (* 2 (+ cols 1))) marks))
+     (and (exists? (+ c (+ cols 1)) marks) (exists? (- c (+ cols 1)) marks))
+     (and (exists? (- c (+ cols 1)) marks) (exists? (- c (* 2 (+ cols 1))) marks)))))
+     
 
 (define wins?
   (lambda (objs)
@@ -110,11 +115,12 @@
 ;; 勝敗がつかない時は #f で抜ける。
 ;; FIXME, 勝敗ついた時はゲームを止めなくちゃな。
 (define judge
-  (lambda ()
-    (cond
-     ((wins? (select-marked "o")) (message "o wins") (exit))
-     ((wins? (select-marked "x")) (message "x wins") (exit))
-     (else #f))))
+  (lambda (mark)
+    (if (wins? (select-marked mark))
+        (begin
+          (message (string-append mark " wins"))
+          (exit))
+        #f)))
 
 ;; 相手に手を渡す。
 ;; 空いている目を調べ、ランダムにその一つにマーク "x" を入れる。
@@ -127,7 +133,7 @@
       ;; FIXME, 空いている最初のマスを選択する。
       (mark (second my) "x")
       (set! current (first my))
-      (judge))))
+      (judge "x"))))
 
 ;; 盤面の作成。
 ;; 同時にボタンのコールバック関数を定義。
@@ -146,7 +152,7 @@
                               [callback (λ (b e)
                                           (when (mark b "o")
                                             (set! current (+ (* row rows) col))
-                                            (judge)
+                                            (judge "o")
                                             (opposite)))]))))))
 
 ;; ボタンのリストにインデックスをつけたリストをあらかじめ作っておく。
