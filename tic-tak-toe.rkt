@@ -79,14 +79,19 @@
 
 (define horizontal?
   (lambda (c marks)
+    (printf "~a ~a~%" c marks)
     (or
      (and (exists? (+ c 1) marks) (exists? (+ c 2) marks))
      (and (exists? (- c 1) marks) (exists? (- c 2) marks)))))
 
+;;
 (define vertical?
   (lambda (c marks)
+    ;; (or
+    ;;  (and (exists? (+ c cols) marks) (exists? (+ c (* 2 cols)) marks))
+    ;;  (and (exists? (- c cols) marks) (exists? (- c (* 2 cols)) marks)))))
     #f))
-
+;
 (define diagonal?
   (lambda (c marks)
     #f))
@@ -107,8 +112,8 @@
 (define judge
   (lambda ()
     (cond
-     ((wins? (select-marked "o")) (message "o wins"))
-     ((wins? (select-marked "x")) (message "x wins"))
+     ((wins? (select-marked "o")) (message "o wins") (exit))
+     ((wins? (select-marked "x")) (message "x wins") (exit))
      (else #f))))
 
 ;; 相手に手を渡す。
