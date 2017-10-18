@@ -10,8 +10,8 @@
 (require racket/gui/base)
 
 ;; ゲームの縦横
-(define rows 3)
-(define cols 3)
+(define rows 5)
+(define cols 5)
 
 ;; 打ったマスを覚えておくのに current を導入。
 (define current #f)
@@ -30,8 +30,6 @@
 (define map-index
   (λ (lst)
     (map list (range (length lst)) lst)))
-
-
 
 (define frame (new frame% [label "tic-tac-toe"]))
 (send frame show #t)
@@ -71,41 +69,48 @@
 ;; インデックスから縦横斜めに揃っているかどうかを判定。
 ;; 揃っていたら #t, そうでなければ #f を返す。
 (define exists?
-  (lambda (a xs)
+  (λ (a xs)
     (cond
      ((null? xs) #f)
      ((= (car xs) a) #t)
      (else (exists? a (cdr xs))))))
 
-;;FIXME!
+;; FIXME, 一般化できたと思うが、長すぎ。
+;; 打った石の横縦斜めに自分の石があるかどうかを判定する。
+;; もっとコンサイスに書けないの？
 (define horizontal?
-  (lambda (c marks)
-    (printf "~a ~a~%" c marks)
+  (λ (c marks)
+;;    (printf "~a ~a~%" c marks)
     (or
      (and (exists? (+ c 1) marks) (exists? (+ c 2) marks))
      (and (exists? (+ c 1) marks) (exists? (- c 1) marks))
      (and (exists? (- c 1) marks) (exists? (- c 2) marks)))))
 
 (define vertical?
-  (lambda (c marks)
+  (λ (c marks)
     (or
       (and (exists? (+ c cols) marks) (exists? (+ c (* 2 cols)) marks))
       (and (exists? (+ c cols) marks) (exists? (- c cols) marks))
       (and (exists? (- c cols) marks) (exists? (- c (* 2 cols)) marks)))))
-    
+
 (define diagonal?
-  (lambda (c marks)
+  (λ (c marks)
     (or
-     (and (exists? (+ c (+ cols 1)) marks) (exists? (+ c (* 2 (+ cols 1))) marks))
-     (and (exists? (+ c (+ cols 1)) marks) (exists? (- c (+ cols 1)) marks))
-     (and (exists? (- c (+ cols 1)) marks) (exists? (- c (* 2 (+ cols 1))) marks))
-     (and (exists? (+ c (- cols 1)) marks) (exists? (+ c (* 2 (- cols 1))) marks))
-     (and (exists? (+ c (- cols 1)) marks) (exists? (- c (- cols 1)) marks))
-     (and (exists? (- c (- cols 1)) marks) (exists? (- c (* 2 (- cols 1))) marks)))))
-     
+     (and (exists? (+ c (+ cols 1)) marks)
+          (exists? (+ c (* 2 (+ cols 1))) marks))
+     (and (exists? (+ c (+ cols 1)) marks)
+          (exists? (- c (+ cols 1)) marks))
+     (and (exists? (- c (+ cols 1)) marks)
+          (exists? (- c (* 2 (+ cols 1))) marks))
+     (and (exists? (+ c (- cols 1)) marks)
+          (exists? (+ c (* 2 (- cols 1))) marks))
+     (and (exists? (+ c (- cols 1)) marks)
+          (exists? (- c (- cols 1)) marks))
+     (and (exists? (- c (- cols 1)) marks)
+          (exists? (- c (* 2 (- cols 1))) marks)))))
 
 (define wins?
-  (lambda (objs)
+  (λ (objs)
     (let ((marks (map car objs)))
       (or
        (horizontal? current marks)
@@ -116,9 +121,10 @@
 ;; select-marked で味方の石のある場所のリスト、
 ;; wins? で石が並んでるかどうかを判定、メッセージをだす。
 ;; 勝敗がつかない時は #f で抜ける。
-;; FIXME, 勝敗ついた時はゲームを止めなくちゃな。
+;;
+;; FIXME, 勝敗ついた時はゲームを止めなくちゃな。exit はあんまりか？
 (define judge
-  (lambda (mark)
+  (λ (mark)
     (if (wins? (select-marked mark))
         (begin
           (message (string-append mark " wins"))
