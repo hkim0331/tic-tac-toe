@@ -77,6 +77,7 @@
      ((= (car xs) a) #t)
      (else (exists? a (cdr xs))))))
 
+;;FIXME!
 (define horizontal?
   (lambda (c marks)
     (printf "~a ~a~%" c marks)
@@ -92,13 +93,15 @@
       (and (exists? (+ c cols) marks) (exists? (- c cols) marks))
       (and (exists? (- c cols) marks) (exists? (- c (* 2 cols)) marks)))))
     
-;
 (define diagonal?
   (lambda (c marks)
     (or
      (and (exists? (+ c (+ cols 1)) marks) (exists? (+ c (* 2 (+ cols 1))) marks))
      (and (exists? (+ c (+ cols 1)) marks) (exists? (- c (+ cols 1)) marks))
-     (and (exists? (- c (+ cols 1)) marks) (exists? (- c (* 2 (+ cols 1))) marks)))))
+     (and (exists? (- c (+ cols 1)) marks) (exists? (- c (* 2 (+ cols 1))) marks))
+     (and (exists? (+ c (- cols 1)) marks) (exists? (+ c (* 2 (- cols 1))) marks))
+     (and (exists? (+ c (- cols 1)) marks) (exists? (- c (- cols 1)) marks))
+     (and (exists? (- c (- cols 1)) marks) (exists? (- c (* 2 (- cols 1))) marks)))))
      
 
 (define wins?
