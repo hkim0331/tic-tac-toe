@@ -13,6 +13,9 @@
 (define rows 3)
 (define cols 3)
 
+;; 打ったマスを覚えておくのに current を導入。
+(define current #f)
+
 ;; リストの n 番目の要素を返す。基本関数。
 (define nth
   (λ (obj n)
@@ -28,7 +31,8 @@
   (λ (lst)
     (map list (range (length lst)) lst)))
 
-;; ゲームはここから。
+
+
 (define frame (new frame% [label "tic-tac-toe"]))
 (send frame show #t)
 
@@ -39,13 +43,15 @@
     (message-box "tic-tac-toe" msg)))
 
 ;; ボタンの背景は "" かどうか？
-;; "" ならば #f、それ以外なら #t
+;; 引数はボタンオブジェクト、
+;; 戻り値は背景が "" ならば #f、それ以外なら #t.
 (define marked?
   (λ (btn)
     (not (equal? (send btn get-label) ""))))
 
 ;; ボタン btn の背景を mark とする。
-;; すでにマークされていたらエラー。
+;; すでにマークされていたらダイアログを出す。戻り値は #f,
+;; マークできたら戻り値は #t.
 (define mark
   (λ (btn mark)
     (if (marked? btn)
@@ -56,44 +62,81 @@
           (send btn set-label mark)
           #t))))
 
-;; リスト buttons-index 中のマーク m がついたボタンのインデックスを返す。
-;; car を忘れずに。
-(define select-index
+;; リスト buttons-index 中のマーク m がついたボタンのリストを返す。
+(define select-marked
   (λ (m)
-    (map car
-         (filter (λ (ib) (equal? m (send (second ib) get-label)))
-                 buttons-index))))
+    (filter (λ (ib) (equal? m (send (second ib) get-label)))
+            buttons-index)))
 
-;; FIXME, インデックスから縦横斜めに揃っているかどうかを判定。
+;; インデックスから縦横斜めに揃っているかどうかを判定。
 ;; 揃っていたら #t, そうでなければ #f を返す。
-;; インチキして長さで判定。これでは正しく判定できないよ。
-;; 宮崎の出番だ。
+(define exists?
+  (lambda (a xs)
+    (cond
+     ((null? xs) #f)
+     ((= (car xs) a) #t)
+     (else (exists? a (cdr xs))))))
+
+;;FIXME!
+(define horizontal?
+  (lambda (c marks)
+    (printf "~a ~a~%" c marks)
+    (or
+     (and (exists? (+ c 1) marks) (exists? (+ c 2) marks))
+     (and (exists? (+ c 1) marks) (exists? (- c 1) marks))
+     (and (exists? (- c 1) marks) (exists? (- c 2) marks)))))
+
+(define vertical?
+  (lambda (c marks)
+    (or
+      (and (exists? (+ c cols) marks) (exists? (+ c (* 2 cols)) marks))
+      (and (exists? (+ c cols) marks) (exists? (- c cols) marks))
+      (and (exists? (- c cols) marks) (exists? (- c (* 2 cols)) marks)))))
+    
+(define diagonal?
+  (lambda (c marks)
+    (or
+     (and (exists? (+ c (+ cols 1)) marks) (exists? (+ c (* 2 (+ cols 1))) marks))
+     (and (exists? (+ c (+ cols 1)) marks) (exists? (- c (+ cols 1)) marks))
+     (and (exists? (- c (+ cols 1)) marks) (exists? (- c (* 2 (+ cols 1))) marks))
+     (and (exists? (+ c (- cols 1)) marks) (exists? (+ c (* 2 (- cols 1))) marks))
+     (and (exists? (+ c (- cols 1)) marks) (exists? (- c (- cols 1)) marks))
+     (and (exists? (- c (- cols 1)) marks) (exists? (- c (* 2 (- cols 1))) marks)))))
+     
+
 (define wins?
-  (lambda (marks)
-    (> (length marks) 3)))
+  (lambda (objs)
+    (let ((marks (map car objs)))
+      (or
+       (horizontal? current marks)
+       (vertical? current marks)
+       (diagonal? current marks)))))
 
 ;; 勝敗判定
-;; select-index で味方の石のある場所のリスト、
+;; select-marked で味方の石のある場所のリスト、
 ;; wins? で石が並んでるかどうかを判定、メッセージをだす。
 ;; 勝敗がつかない時は #f で抜ける。
 ;; FIXME, 勝敗ついた時はゲームを止めなくちゃな。
 (define judge
-  (lambda ()
-    (cond
-     ((wins? (select-index "o")) (message "o wins"))
-     ((wins? (select-index "x")) (message "x wins"))
-     (else #f))))
+  (lambda (mark)
+    (if (wins? (select-marked mark))
+        (begin
+          (message (string-append mark " wins"))
+          (exit))
+        #f)))
 
 ;; 相手に手を渡す。
 ;; 空いている目を調べ、ランダムにその一つにマーク "x" を入れる。
 ;; ルールは知っているが、戦略は持たないバカな相手。
+;; 打った手を current に記録する。
 (define opposite
   (λ ()
-    (let ((empties
-           (filter (λ (b) (equal? (send b get-label) "")) buttons)))
-      ;; FIXME, version 1. 空いている最初のマスを選択する。
-      (mark (first empties) "x")
-      (judge))))
+    (let* ((empties (select-marked ""))
+           (my (first empties)))
+      ;; FIXME, 空いている最初のマスを選択する。
+      (mark (second my) "x")
+      (set! current (first my))
+      (judge "x"))))
 
 ;; 盤面の作成。
 ;; 同時にボタンのコールバック関数を定義。
@@ -111,7 +154,8 @@
                               [label ""]
                               [callback (λ (b e)
                                           (when (mark b "o")
-                                            (judge)
+                                            (set! current (+ (* row rows) col))
+                                            (judge "o")
                                             (opposite)))]))))))
 
 ;; ボタンのリストにインデックスをつけたリストをあらかじめ作っておく。
