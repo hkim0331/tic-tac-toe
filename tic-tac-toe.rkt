@@ -77,12 +77,14 @@
 ;; FIXME, 打った石の横縦斜めに自分の石があるかどうかを判定する。
 ;; 一般化できたと思うが、長すぎ。
 ;; もっとコンサイスに書けないの？
+;; BUGFIX cols=5 の時、(3 4 5) を #t にしてはいけない。
 (define horizontal?
   (λ (c marks)
-    (or
-     (and (exists? (+ c 1) marks) (exists? (+ c 2) marks))
-     (and (exists? (+ c 1) marks) (exists? (- c 1) marks))
-     (and (exists? (- c 1) marks) (exists? (- c 2) marks)))))
+    (let ((m (modulo c cols)))
+      (or
+       (and (< m (- cols 2)) (exists? (+ c 1) marks) (exists? (+ c 2) marks)))
+       (and (> m 2) (exists? (- c 1) marks) (exists? (- c 2) marks))
+       (and (exists? (+ c 1) marks) (exists? (- c 1) marks)))))
 
 (define vertical?
   (λ (c marks)
